@@ -202,16 +202,20 @@ SysTick_Handler:
 
 @
 @ External interrupt line 0 interrupt handler
-@   (count button presses)
+@   (swap current_direction)
 @
   .type  EXTI0_IRQHandler, %function
 EXTI0_IRQHandler:
 
   PUSH  {R4,R5,LR}
 
-  LDR   R4, =button_count           @ count = count + 1
+  LDR   R4, =current_direction      @ current_direction XOR 1;
   LDR   R5, [R4]                    @
-  ADD   R5, R5, #1                  @
+  CMP   R5, #1
+  IT    EQ
+  MOVEQ R5, #-1
+  IT    NE
+  MOVNE R5, #1
   STR   R5, [R4]                    @
 
   LDR   R4, =EXTI_PR                @ Clear (acknowledge) the interrupt

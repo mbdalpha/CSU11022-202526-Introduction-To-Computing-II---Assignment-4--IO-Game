@@ -6,7 +6,8 @@
 TASKS TO COMPLETE:
 -[x] Rotate LED clockwise 
 -[x] Rotate LED counterclockwise
--[] Change direction of rotation using push button
+-[x] Change direction of rotation using push button
+-[] Change direction of rotation using each different button
 -[] Set ranges each button can change direction in
 -[] Vary rotation speed based on when hit
 -[] Add fail state and counting
