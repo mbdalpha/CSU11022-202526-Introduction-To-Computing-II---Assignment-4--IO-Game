@@ -8,7 +8,7 @@
   
   .global Main
   .global SysTick_Handler
-  .global EXTI0_IRQHandler
+  .global EXTI2_TSC_IRQHandler
 
   @ Definitions are in definitions.s to keep this file "clean"
   #include "definitions.S"
@@ -102,34 +102,47 @@ Main:
   @
 
   @ Initialise count to zero
-  LDR   R4, =button_count             @ count = 0;
-  MOV   R5, #0                        @
-  STR   R5, [R4]                      @
+  LDR     R4, =button_count             @ count = 0;
+  MOV     R5, #0                        @
+  STR     R5, [R4]                      @
 
-  @ Configure USER pushbutton (GPIO Port A Pin 0 on STM32F3 Discovery
-  @   kit) to use the EXTI0 external interrupt signal
+  @ Enable GPIOA clock
+  LDR     R4, =RCC_AHBENR
+  LDR     R5, [R4]
+  ORR     R5, R5, #(1<<17)            @ Bit 17 = IOPAEN (GPIOA clock enable)
+  STR     R5, [R4]
+
+  @ Set PA2 to pull up
+  LDR     R4, =0x4800000C             @ GPIOA_PUPDR
+  LDR     R5, [R4]
+  BIC     R5, R5, #(0b11<<4)          @ Clear bits 5:4 (pin 2x2 = bit 4)
+  ORR     R5, R5, #(0b01<<4)          @ Set to 01 = pull-up
+  STR     R5, [R4]
+
+  @ Configure USER pushbutton (GPIO Port A Pin 2 on STM32F3 Discovery
+  @   kit) to use the EXTI2 external interrupt signal
   @ Determined by bits 3..0 of the External Interrrupt Control
   @   Register (EXTIICR)
   LDR     R4, =SYSCFG_EXTIICR1
   LDR     R5, [R4]
-  BIC     R5, R5, #0b1111
+  BIC     R5, R5, #(0b1111<<8)
   STR     R5, [R4]
 
-  @ Enable (unmask) interrupts on external interrupt Line0
+  @ Enable (unmask) interrupts on external interrupt Line2
   LDR     R4, =EXTI_IMR
   LDR     R5, [R4]
-  ORR     R5, R5, #1
+  ORR     R5, R5, #(1<<2)
   STR     R5, [R4]
 
-  @ Set falling edge detection on Line0
+  @ Set falling edge detection on Line2
   LDR     R4, =EXTI_FTSR
   LDR     R5, [R4]
-  ORR     R5, R5, #1
+  ORR     R5, R5, #(1<<2)
   STR     R5, [R4]
 
-  @ Enable NVIC interrupt #6 (external interrupt Line0)
+  @ Enable NVIC interrupt #6 (external interrupt Line2)
   LDR     R4, =NVIC_ISER
-  MOV     R5, #(1<<6)
+  MOV     R5, #(1<<8)
   STR     R5, [R4]
 
   @ Nothing else to do in Main
@@ -204,8 +217,8 @@ SysTick_Handler:
 @ External interrupt line 0 interrupt handler
 @   (swap current_direction)
 @
-  .type  EXTI0_IRQHandler, %function
-EXTI0_IRQHandler:
+  .type  EXTI2_TSC_IRQHandler, %function
+EXTI2_TSC_IRQHandler:
 
   PUSH  {R4,R5,LR}
 
@@ -219,7 +232,7 @@ EXTI0_IRQHandler:
   STR   R5, [R4]                    @
 
   LDR   R4, =EXTI_PR                @ Clear (acknowledge) the interrupt
-  MOV   R5, #(1<<0)                 @
+  MOV   R5, #(1<<2)                 @
   STR   R5, [R4]                    @
 
   @ Return from interrupt handler
